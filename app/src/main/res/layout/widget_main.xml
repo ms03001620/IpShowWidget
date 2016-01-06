@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:textSize="24sp"
         android:textColor="#000"
-        android:text="Hello World!" />
+        android:text="Scanning..." />
 
     <ImageButton
         android:layout_marginLeft="4dp"
