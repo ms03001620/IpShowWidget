@@ -13,6 +13,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ((TextView) findViewById(R.id.text)).setText(IpUtils.getIpV4String(this));
+        ((TextView) findViewById(R.id.text)).setText(
+                "getLocalIpAddress" +
+                IpUtils.getWiFiIpString(this) + "\n"
+        );
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                IpUtils.getLocalIpAddressv2();
+            }
+        }).start();
     }
 }
