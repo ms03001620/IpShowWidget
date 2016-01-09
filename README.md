@@ -1,4 +1,4 @@
-# Show IP address with widget
+# Show Wifi IP address with widget
 
 
 ## Preview
