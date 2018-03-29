@@ -3,4 +3,5 @@
     <string name="app_name">IP地址</string>
     <string name="scan">获取中...</string>
     <string name="retry">请重试...</string>
+    <string name="wifi_disable">WiFi不可用</string>
 </resources>
