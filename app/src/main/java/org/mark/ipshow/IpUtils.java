@@ -16,12 +16,6 @@ import java.util.Enumeration;
  */
 public class IpUtils {
 
-    public static String getWiFiIpString(Context content){
-        WifiManager wm = (WifiManager) content.getSystemService(Context.WIFI_SERVICE);
-        String ip = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-        return ip;
-    }
-
     public static String getLocalIpAddressv2(){
         try{
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">IpShowWidget</string>
+    <string name="scan">获取中...</string>
+    <string name="retry">请重试...</string>
+</resources>

@@ -5,3 +5,6 @@
     android:initialLayout="@layout/widget_main"
     android:minHeight="36dp"
     android:minWidth="146dp" />
+
+<!--
+    android:previewImage="@drawable/preview"-->
