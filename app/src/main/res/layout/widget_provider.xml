@@ -3,8 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:initialLayout="@layout/widget_main"
-    android:minHeight="36dp"
-    android:minWidth="146dp" />
+    android:minHeight="30dp"
+    android:minWidth="160dp"
+    android:previewImage="@mipmap/preview" />
 
-<!--
-    android:previewImage="@drawable/preview"-->

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">IpShowWidget</string>
+    <string name="app_name">WiFi IP</string>
     <string name="scan">Scanning...</string>
     <string name="retry">Please retry...</string>
 </resources>
