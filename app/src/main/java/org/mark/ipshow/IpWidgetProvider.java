@@ -1,6 +1,5 @@
 package org.mark.ipshow;
 
-import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
@@ -9,25 +8,19 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
-import android.os.Message;
 import android.text.format.Formatter;
 import android.util.Log;
 import android.widget.RemoteViews;
 
 
-import java.util.logging.LogRecord;
-
-
 public class IpWidgetProvider extends AppWidgetProvider {
-    private static final String MyOnClick = "myOnClickTag";
-    private Task mTask;
-
-    @SuppressLint("HandlerLeak")
-    private Handler mHandler = new Handler();
+    private static final String MyOnClick = "user.click.button";
+    private static Task sTask = new Task();
+    private static Handler sHandler = new Handler();
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        RemoteViews remoteViews =  new RemoteViews(context.getPackageName(), R.layout.widget_main);
+        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_main);
         ComponentName thisWidget = new ComponentName(context, IpWidgetProvider.class);
         remoteViews.setTextViewText(R.id.text_ip, getWiFiIpString(context));
         remoteViews.setOnClickPendingIntent(R.id.btn_refresh, getPendingSelfIntent(context, MyOnClick));
@@ -42,57 +35,69 @@ public class IpWidgetProvider extends AppWidgetProvider {
 
     public void onReceive(final Context context, Intent intent) {
         super.onReceive(context, intent);
-        Log.d("IpWidgetProvider", "onReceive");
-        if (MyOnClick.equals(intent.getAction())) {
-            final RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_main);
-            remoteViews.setTextViewText(R.id.text_ip, context.getString(R.string.scan));
-            ComponentName thisWidget = new ComponentName(context, IpWidgetProvider.class);
+        Log.d("IpWidgetProvider", "onReceive:" + (intent == null ? "null" : intent.getAction()));
+        if (intent == null) {
+            return;
+        }
+        if (MyOnClick.equals(intent.getAction()) || "android.net.wifi.STATE_CHANGE".equals(intent.getAction())) {
             AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            appWidgetManager.updateAppWidget(thisWidget, remoteViews);
-
+            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_main);
             remoteViews.setTextViewText(R.id.text_ip, context.getString(R.string.scan));
+            appWidgetManager.updateAppWidget(new ComponentName(context, IpWidgetProvider.class), remoteViews);
 
-            if (mTask == null) {
-                Log.d("IpWidgetProvider", "create task");
-                mTask = new Task(context);
-            }
-
-            Log.d("IpWidgetProvider", "postDelayed task");
-            mHandler.removeCallbacks(mTask);
-            mHandler.postDelayed(mTask, 1000);
+            sTask.setContext(context);
+            sHandler.removeCallbacks(sTask);
+            sHandler.postDelayed(sTask, 1000);
         }
     }
 
-    class Task implements Runnable {
+    static class Task implements Runnable {
         private Context mContext;
 
-        public Task(Context context) {
+        public void setContext(Context context) {
             mContext = context;
         }
 
         @Override
         public void run() {
-            final RemoteViews remoteViews = new RemoteViews(mContext.getPackageName(), R.layout.widget_main);
-            remoteViews.setTextViewText(R.id.text_ip, getWiFiIpString(mContext));
-            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(mContext);
-            ComponentName thisWidget = new ComponentName(mContext, IpWidgetProvider.class);
-            appWidgetManager.updateAppWidget(thisWidget, remoteViews);
+            Log.d("IpWidgetProvider", "Task running");
+            if (mContext != null) {
+                final RemoteViews remoteViews = new RemoteViews(mContext.getPackageName(), R.layout.widget_main);
+                remoteViews.setTextViewText(R.id.text_ip, getWiFiIpString(mContext));
+                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(mContext);
+                ComponentName thisWidget = new ComponentName(mContext, IpWidgetProvider.class);
+                appWidgetManager.updateAppWidget(thisWidget, remoteViews);
+            }
         }
     }
 
-    public String getWiFiIpString(Context content) {
+    public static String getWiFiIpString(Context context) {
         String ipResult = null;
         try {
-            WifiManager wm = (WifiManager) content.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             if (wm != null) {
-                ipResult = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+                if (WifiManager.WIFI_STATE_ENABLED == wm.getWifiState()) {
+                    ipResult = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+                } else {
+                    ipResult = context.getString(R.string.wifi_disable);
+                }
+
             } else {
-                ipResult = content.getString(R.string.retry);
+                ipResult = context.getString(R.string.retry);
             }
         } catch (Exception e) {
             ipResult = e.toString();
             Log.e("IpWidgetProvider", "WifiManager", e);
         }
         return ipResult;
+    }
+
+    @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        super.onDeleted(context, appWidgetIds);
+        Log.d("IpWidgetProvider", "onDeleted");
+        sTask.setContext(null);
+        sTask = null;
+        sHandler = null;
     }
 }
