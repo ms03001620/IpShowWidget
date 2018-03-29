@@ -2,7 +2,7 @@
 
 
 ## Preview
-![Demo](https://raw.githubusercontent.com/ms03001620/TestHelloProject/master/doc/4.png)
+![Demo](https://raw.githubusercontent.com/ms03001620/TestHelloProject/master/doc/5.gif)
 
 ## License
 
