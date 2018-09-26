@@ -1,10 +1,14 @@
 package org.mark.ipshow;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -14,6 +18,14 @@ import java.util.Enumeration;
 
 public class IpUtils {
     public static String getIPAddress(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            return sss(context);
+        } else {
+            return ddd(context);
+        }
+    }
+
+    public static String ddd(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null) {
             return "";
@@ -48,6 +60,44 @@ public class IpUtils {
         }
         return "";
     }
+
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    public static String sss(Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return "";
+        }
+        Network[] networks = connectivityManager.getAllNetworks();
+        for (Network network : networks) {
+            NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
+            if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                WifiManager wifiManager = (WifiManager) context.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+                if (wifiManager != null) {
+                    WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+                    return intIP2StringIP(wifiInfo.getIpAddress());
+                }
+            }
+
+            if (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                try {
+                    for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+                        NetworkInterface intf = en.nextElement();
+                        for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                            InetAddress inetAddress = enumIpAddr.nextElement();
+                            if (!inetAddress.isLoopbackAddress() && inetAddress instanceof Inet4Address) {
+                                return inetAddress.getHostAddress();
+                            }
+                        }
+                    }
+                } catch (SocketException e) {
+                    LogUtils.e("IpUtils", "SocketException", e);
+                }
+            }
+        }
+
+        return "";
+    }
+
 
     /**
      * 将得到的int类型的IP转换为String类型
