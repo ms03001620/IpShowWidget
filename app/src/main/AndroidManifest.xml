@@ -20,11 +20,13 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="android.net.wifi.STATE_CHANGE" />
+                <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@layout/widget_provider" />
         </receiver>
+
     </application>
 
 </manifest>

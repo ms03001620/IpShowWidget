@@ -3,26 +3,45 @@ package org.mark.ipshow;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
 
 
+/**
+ * android 7 正常
+ * android 8 无法获取到wifi变化
+ * android 9 无法工作
+ */
 public class IpWidgetProvider extends AppWidgetProvider {
     private static final String USER_CLICK_BUTTON = "user.click.button";
-    private static long sTime;
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_main);
-        ComponentName thisWidget = new ComponentName(context, IpWidgetProvider.class);
-        remoteViews.setTextViewText(R.id.text_ip, getIpString(context));
-        remoteViews.setOnClickPendingIntent(R.id.btn_refresh, getPendingSelfIntent(context, USER_CLICK_BUTTON));
-        appWidgetManager.updateAppWidget(thisWidget, remoteViews);
+        for (int i = 0; i < appWidgetIds.length; i++) {
+            updateTextView(context, appWidgetIds[i], getIpString(context));
+        }
+
+        saveTitlePref(context, appWidgetIds);
     }
+
+    static void saveTitlePref(Context context, int[] appWidgetId) {
+        StringBuilder string = new StringBuilder();
+        for (int i = 0; i < appWidgetId.length; i++) {
+            if (i > 0) {
+                string.append(",");
+            }
+            string.append(appWidgetId[i]);
+        }
+
+        SharedPreferences.Editor prefs = context.getSharedPreferences(USER_CLICK_BUTTON, Context.MODE_PRIVATE).edit();
+        prefs.putString(USER_CLICK_BUTTON, string.toString());
+        prefs.apply();
+    }
+
 
     protected PendingIntent getPendingSelfIntent(Context context, String action) {
         Intent intent = new Intent(context, getClass());
@@ -32,44 +51,55 @@ public class IpWidgetProvider extends AppWidgetProvider {
 
     public void onReceive(final Context context, Intent intent) {
         super.onReceive(context, intent);
-        LogUtils.d("IpWidgetProvider", "onReceive:" + (intent == null ? "null" : intent.getAction()));
-        if (intent == null) {
-            return;
-        }
-        if (System.currentTimeMillis() - sTime < 1000) {
-            // ignore fast click by user
-            return;
+        try {
+            final int[] appWidgetIds = getWidgetIds(context);
+
+            LogUtils.d("IpWidgetProvider", "onReceive:" + (intent == null ? "null" : intent.getAction()) + ", ss:" + appWidgetIds.length);
+
+
+            for (int i = 0; i < appWidgetIds.length; i++) {
+                final int index = i;
+                LogUtils.d("IpWidgetProvider", "onReceive:" + i);
+
+                updateTextView(context, appWidgetIds[i], context.getString(R.string.scan));
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateTextView(context, appWidgetIds[index], getIpString(context));
+                    }
+                }, 1000);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        sTime = System.currentTimeMillis();
-        if (USER_CLICK_BUTTON.equals(intent.getAction()) || "android.net.wifi.STATE_CHANGE".equals(intent.getAction())) {
-            AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-            RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_main);
-            remoteViews.setTextViewText(R.id.text_ip, context.getString(R.string.scan));
-            appWidgetManager.updateAppWidget(new ComponentName(context, IpWidgetProvider.class), remoteViews);
-
-            Task task = new Task(context);
-            new Handler().postDelayed(task, 1000);
-        }
     }
 
-    static class Task implements Runnable {
-        private Context mContext;
+    private void updateTextView(Context context, int widgetId, String text) {
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_main);
+        views.setTextViewText(R.id.text_ip, text);
+        views.setOnClickPendingIntent(R.id.btn_refresh, getPendingSelfIntent(context, USER_CLICK_BUTTON));
+        AppWidgetManager.getInstance(context).updateAppWidget(widgetId, views);
+    }
 
-        Task(Context context) {
-            mContext = context;
-        }
 
-        @Override
-        public void run() {
-            LogUtils.d("IpWidgetProvider", "Task running");
-            if (mContext != null) {
-                final RemoteViews remoteViews = new RemoteViews(mContext.getPackageName(), R.layout.widget_main);
-                remoteViews.setTextViewText(R.id.text_ip, getIpString(mContext));
-                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(mContext);
-                ComponentName thisWidget = new ComponentName(mContext, IpWidgetProvider.class);
-                appWidgetManager.updateAppWidget(thisWidget, remoteViews);
+    private int[] getWidgetIds(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(USER_CLICK_BUTTON, Context.MODE_PRIVATE);
+        String string = prefs.getString(USER_CLICK_BUTTON, "");
+
+        if (string.contains(",")) {
+            String[] ss = string.split(",");
+            int[] ids = new int[ss.length];
+            for (int i = 0; i < ss.length; i++) {
+                String s = ss[i];
+                ids[i] = Integer.valueOf(s);
             }
+
+            return ids;
+
+        } else {
+            return new int[]{Integer.valueOf(string)};
         }
     }
 
