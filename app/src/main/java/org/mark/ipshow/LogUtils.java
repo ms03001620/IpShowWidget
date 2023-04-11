@@ -10,10 +10,9 @@ public class LogUtils {
         }
     }
 
-    public static int e(String tag, String msg, Throwable tr) {
+    public static void e(String tag, String msg, Throwable tr) {
         if (BuildConfig.DEBUG) {
-            return Log.e(tag, msg, tr);
+            Log.e(tag, msg, tr);
         }
-        return 0;
     }
 }

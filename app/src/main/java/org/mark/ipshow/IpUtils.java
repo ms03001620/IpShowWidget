@@ -28,7 +28,7 @@ public class IpUtils {
     public static String ddd(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null) {
-            return "";
+            return "manager null";
         }
         NetworkInfo info = connectivityManager.getActiveNetworkInfo();
         if (info.isConnected()) {
@@ -46,6 +46,7 @@ public class IpUtils {
                     }
                 } catch (SocketException e) {
                     LogUtils.e("IpUtils", "SocketException", e);
+                    return e.getMessage();
                 }
 
             } else if (info.getType() == ConnectivityManager.TYPE_WIFI) {
@@ -58,14 +59,14 @@ public class IpUtils {
                 return "";
             }
         }
-        return "";
+        return "no connected()";
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     public static String sss(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null) {
-            return "";
+            return "manager null";
         }
         Network[] networks = connectivityManager.getAllNetworks();
         for (Network network : networks) {
@@ -91,11 +92,13 @@ public class IpUtils {
                     }
                 } catch (SocketException e) {
                     LogUtils.e("IpUtils", "SocketException", e);
+                    return e.getMessage();
                 }
             }
+            return "transport none";
         }
 
-        return "";
+        return networks == null ? "networks null" : "networks " + networks.length;
     }
 
 

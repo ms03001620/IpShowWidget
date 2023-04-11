@@ -10,6 +10,8 @@ import android.os.Handler;
 import android.text.TextUtils;
 import android.widget.RemoteViews;
 
+import java.util.Arrays;
+
 
 /**
  * android 7 正常
@@ -21,14 +23,15 @@ public class IpWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        for (int i = 0; i < appWidgetIds.length; i++) {
-            updateTextView(context, appWidgetIds[i], getIpString(context));
+        LogUtils.d("IpWidgetProvider", "onUpdate appWidgetIds:" + Arrays.toString(appWidgetIds));
+        for (int appWidgetId : appWidgetIds) {
+            updateTextView(context, appWidgetId, makeDisplayText(context));
         }
-
         saveTitlePref(context, appWidgetIds);
     }
 
     static void saveTitlePref(Context context, int[] appWidgetId) {
+        LogUtils.d("IpWidgetProvider", "saveTitlePref:" + Arrays.toString(appWidgetId));
         StringBuilder string = new StringBuilder();
         for (int i = 0; i < appWidgetId.length; i++) {
             if (i > 0) {
@@ -36,10 +39,28 @@ public class IpWidgetProvider extends AppWidgetProvider {
             }
             string.append(appWidgetId[i]);
         }
-
         SharedPreferences.Editor prefs = context.getSharedPreferences(USER_CLICK_BUTTON, Context.MODE_PRIVATE).edit();
         prefs.putString(USER_CLICK_BUTTON, string.toString());
         prefs.apply();
+    }
+
+    private int[] loadWidgetIds(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(USER_CLICK_BUTTON, Context.MODE_PRIVATE);
+        String string = prefs.getString(USER_CLICK_BUTTON, null);
+        if (string != null) {
+            if (string.contains(",")) {
+                String[] idsString = string.split(",");
+                int[] ids = new int[idsString.length];
+                for (int i = 0; i < idsString.length; i++) {
+                    String s = idsString[i];
+                    ids[i] = Integer.parseInt(s);
+                }
+                return ids;
+            } else {
+                return new int[]{Integer.parseInt(string)};
+            }
+        }
+        return null;
     }
 
 
@@ -51,32 +72,27 @@ public class IpWidgetProvider extends AppWidgetProvider {
 
     public void onReceive(final Context context, Intent intent) {
         super.onReceive(context, intent);
-        try {
-            final int[] appWidgetIds = getWidgetIds(context);
+        LogUtils.d("IpWidgetProvider", "onReceive action:" + intent.getAction());
+        if (!USER_CLICK_BUTTON.equals(intent.getAction())) {
+            return;
+        }
 
-            LogUtils.d("IpWidgetProvider", "onReceive:" + (intent == null ? "null" : intent.getAction()) + ", ss:" + appWidgetIds.length);
-
-
-            for (int i = 0; i < appWidgetIds.length; i++) {
-                final int index = i;
-                LogUtils.d("IpWidgetProvider", "onReceive:" + i);
-
-                updateTextView(context, appWidgetIds[i], context.getString(R.string.scan));
-
+        final int[] appWidgetIds = loadWidgetIds(context);
+        if (appWidgetIds != null) {
+            for (final int id : appWidgetIds) {
+                updateTextView(context, id, context.getString(R.string.scan));
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        updateTextView(context, appWidgetIds[index], getIpString(context));
+                        updateTextView(context, id, makeDisplayText(context));
                     }
                 }, 1000);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-
     }
 
     private void updateTextView(Context context, int widgetId, String text) {
+        LogUtils.d("IpWidgetProvider", "updateTextView widgetId:" + widgetId + ", text:" + text);
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_main);
         views.setTextViewText(R.id.text_ip, text);
         views.setOnClickPendingIntent(R.id.btn_refresh, getPendingSelfIntent(context, USER_CLICK_BUTTON));
@@ -84,26 +100,7 @@ public class IpWidgetProvider extends AppWidgetProvider {
     }
 
 
-    private int[] getWidgetIds(Context context) {
-        SharedPreferences prefs = context.getSharedPreferences(USER_CLICK_BUTTON, Context.MODE_PRIVATE);
-        String string = prefs.getString(USER_CLICK_BUTTON, "");
-
-        if (string.contains(",")) {
-            String[] ss = string.split(",");
-            int[] ids = new int[ss.length];
-            for (int i = 0; i < ss.length; i++) {
-                String s = ss[i];
-                ids[i] = Integer.valueOf(s);
-            }
-
-            return ids;
-
-        } else {
-            return new int[]{Integer.valueOf(string)};
-        }
-    }
-
-    public static String getIpString(Context context) {
+    public static String makeDisplayText(Context context) {
         String address = IpUtils.getIPAddress(context);
         if (TextUtils.isEmpty(address)) {
             address = context.getString(R.string.retry);
