@@ -2,7 +2,7 @@
 
 
 ## Preview
-![image](https://github.com/ms03001620/IpShowWidget/blob/master/sp.png)
+![image](/sp.png)
 
 ## License
 
