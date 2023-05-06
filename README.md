@@ -1,6 +1,9 @@
 # Show Wifi IP address with widget
 
 
+# 构建应用微件
+https://developer.android.com/guide/topics/appwidgets?hl=zh-cn
+
 ## Preview
 ![image](/sp.png)
 
