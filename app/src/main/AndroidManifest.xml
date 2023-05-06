@@ -27,6 +27,15 @@
                 android:resource="@layout/widget_provider" />
         </receiver>
 
+
+        <receiver android:name=".WifiBroadcastReceiver"  android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.AIRPLANE_MODE"/>
+                <action android:name="android.net.wifi.STATE_CHANGE" />
+                <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
