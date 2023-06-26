@@ -17,6 +17,17 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 public class IpUtils {
+    private static int index = 0;
+
+    public static String mockIPAddress(Context context) {
+        index++;
+        if (index % 2 == 0) {
+            return "10.10.10.10";
+        } else {
+            return "255.255.255.255";
+        }
+    }
+
     public static String getIPAddress(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             return sss(context);

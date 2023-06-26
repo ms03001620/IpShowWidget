@@ -6,6 +6,6 @@
     android:updatePeriodMillis="86400000"
     android:minHeight="30dp"
     android:widgetCategory="home_screen"
-    android:minWidth="180dp"
+    android:minWidth="220dp"
     android:previewImage="@mipmap/preview" />
 
