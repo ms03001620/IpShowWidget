@@ -3,6 +3,8 @@ package org.mark.ipshow;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.net.LinkAddress;
+import android.net.LinkProperties;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
@@ -15,6 +17,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Enumeration;
+import java.util.List;
 
 public class IpUtils {
     private static int index = 0;
@@ -29,17 +32,22 @@ public class IpUtils {
     }
 
     public static String getIPAddress(Context context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            return sss(context);
-        } else {
-            return ddd(context);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return api23(context);
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            return api21(context);
+        }
+
+        return api20(context);
     }
 
-    public static String ddd(Context context) {
+    public static String api20(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null) {
-            return "manager null";
+            System.out.println("manager null");
+            return "";
         }
         NetworkInfo info = connectivityManager.getActiveNetworkInfo();
         if (info.isConnected()) {
@@ -56,8 +64,7 @@ public class IpUtils {
                         }
                     }
                 } catch (SocketException e) {
-                    LogUtils.e("IpUtils", "SocketException", e);
-                    return e.getMessage();
+                    e.printStackTrace();
                 }
 
             } else if (info.getType() == ConnectivityManager.TYPE_WIFI) {
@@ -67,17 +74,17 @@ public class IpUtils {
                     WifiInfo wifiInfo = wifiManager.getConnectionInfo();
                     return intIP2StringIP(wifiInfo.getIpAddress());
                 }
-                return "";
             }
         }
-        return "no connected()";
+        return "";
     }
 
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public static String sss(Context context) {
+    public static String api21(Context context) {
         ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null) {
-            return "manager null";
+            System.out.println("manager null");
+            return "";
         }
         Network[] networks = connectivityManager.getAllNetworks();
         for (Network network : networks) {
@@ -102,14 +109,36 @@ public class IpUtils {
                         }
                     }
                 } catch (SocketException e) {
-                    LogUtils.e("IpUtils", "SocketException", e);
-                    return e.getMessage();
+                    e.printStackTrace();
                 }
             }
-            return "transport none";
         }
+        return "";
+    }
 
-        return networks == null ? "networks null" : "networks " + networks.length;
+    @TargetApi(Build.VERSION_CODES.M)
+    public static String api23(Context context) {
+        String result = "";
+        ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        Network network = manager.getActiveNetwork();
+        if (network != null) {
+            //https://stackoverflow.com/questions/11015912/how-do-i-get-ip-address-in-ipv4-format
+            LinkProperties props = manager.getLinkProperties(network);
+            if (props != null) {
+                List<LinkAddress> linkAddress = props.getLinkAddresses(); //May be array. Contains lan ips
+                System.out.println(linkAddress);
+
+                for (int i = 0; i < linkAddress.size(); i++) {
+                    LinkAddress addr = linkAddress.get(i);
+                    InetAddress add = addr.getAddress();
+                    System.out.println(add);
+                    if (add instanceof Inet4Address) {
+                        result = add.getHostAddress();
+                    }
+                }
+            }
+        }
+        return result;
     }
 
 
